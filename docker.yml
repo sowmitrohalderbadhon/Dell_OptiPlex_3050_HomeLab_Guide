@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # 1. Open WebUI (ChatGPT-style Interface for Ollama)
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: always
+    ports:
+      - "3000:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - OLLAMA_BASE_URL=[http://host.docker.internal:11434](http://host.docker.internal:11434)
+    volumes:
+      - open-webui-data:/app/backend/data
+
+  # 2. n8n Automation Tool
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+    volumes:
+      - n8n-data:/home/node/.n8n
+
+  # 3. VS Code Web Edition (code-server)
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: code-server
+    restart: always
+    ports:
+      - "8443:8443"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - PASSWORD=YourStrongPasswordHere
+    volumes:
+      - code-server-config:/config
+      - ~/projects:/config/workspace
+
+  # 4. Local Web Server (Nginx)
+  web-server:
+    image: nginx:alpine
+    container_name: web-server
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ~/website:/usr/share/nginx/html:ro
+
+volumes:
+  open-webui-data:
+  n8n-data:
+  code-server-config:
