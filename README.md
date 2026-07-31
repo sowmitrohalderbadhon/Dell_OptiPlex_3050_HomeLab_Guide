@@ -91,3 +91,69 @@ Create the deployment directory and configure docker-compose.yml[cite: 2]:
 Bash
 mkdir -p ~/homelab && cd ~/homelab
 nano docker-compose.yml
+
+Paste the following container orchestration layout into docker-compose.yml[cite: 2]:YAMLversion: '3.8'
+
+services:
+  # 1. Open WebUI (ChatGPT-style Interface for Ollama)
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: always
+    ports:
+      - "3000:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - OLLAMA_BASE_URL=[http://host.docker.internal:11434](http://host.docker.internal:11434)
+    volumes:
+      - open-webui-data:/app/backend/data
+
+  # 2. n8n Automation Tool
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+    volumes:
+      - n8n-data:/home/node/.n8n
+
+  # 3. VS Code Web Edition (code-server)
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: code-server
+    restart: always
+    ports:
+      - "8443:8443"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - PASSWORD=YourStrongPasswordHere
+    volumes:
+      - code-server-config:/config
+      - ~/projects:/config/workspace
+
+  # 4. Local Web Server (Nginx)
+  web-server:
+    image: nginx:alpine
+    container_name: web-server
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ~/website:/usr/share/nginx/html:ro
+
+volumes:
+  open-webui-data:
+  n8n-data:
+  code-server-config:
+Start all container services[cite: 2]:Bashdocker compose up -d
+
+🌐 Web Services DirectoryAccess your applications via browser from any device on your local network[cite: 2]:Service NamePortAccess URL ExampleOpen WebUI (Llama UI)3000http://192.168.0.100:3000[cite: 2]n8n Workflows5678http://192.168.0.100:5678[cite: 2]VS Code Server8443http://192.168.0.100:8443[cite: 2]Local Web Hosting (Nginx)8080http://192.168.0.100:8080[cite: 2]📊 Resource Management & MaintenanceSystem Monitoring: Track real-time RAM and CPU consumption using htop or container usage with docker stats[cite: 2]:Bashhtop
+docker stats
+Static Site Hosting: Place your local static HTML/CSS/JS files inside the ~/website directory on the host server to serve them automatically via Nginx on port 8080[cite: 2].RAM Upgrade Path: While 8GB RAM handles Ubuntu, Docker, and lightweight 3B AI models smoothly, upgrading to 16GB RAM is recommended for multi-user execution and running larger 7B/8B models[cite: 2].Maintained on a Dell OptiPlex 3050 Micro Home Lab.
